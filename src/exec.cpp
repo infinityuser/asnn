@@ -19,18 +19,10 @@ void kernel::model::exec (bool is_training, double motivator)
             buf_mat = arma::Mat<double>(layers[x_lay].size(), layers[linking[x_lay][y_lay]].size());
 
             for (uint32_t x_in = 0; x_in < layers[x_lay].size(); ++x_in) {
-
-				// collecting accumulation of potentials as EF
-				buf_d[2] = 0; // sum of potentials
-                for (uint32_t y_in = 0; y_in < layers[linking[x_lay][y_lay]].size(); ++y_in) {
-                    buf_d[2] += layers[linking[x_lay][y_lay]][y_in] *
-                                weights[x_lay][y_lay].at(x_in, y_in);
-                }
-
                 // collecting transmitted signal ----------------------------->
                 for (uint32_t y_in = 0; y_in < layers[linking[x_lay][y_lay]].size(); ++y_in) {
                     buf_mat.at(x_in, y_in) =
-                    /*   F   */((layers[linking[x_lay][y_lay]][y_in] * weights[x_lay][y_lay].at(x_in, y_in)) / buf_d[2]) *
+                    /*   F   */(layers[linking[x_lay][y_lay]][y_in] * weights[x_lay][y_lay].at(x_in, y_in)) *
                     /*   P   */(((1 - layers[linking[x_lay][y_lay]][y_in] / (layers[linking[x_lay][y_lay]][y_in] + neupick)) / (buf_d[3] / layers[x_lay][x_in])) +
                     /* Q / Q,*/(conducts[x_lay][y_lay].at(x_in, y_in) / ((double(2) / std::max(layers[linking[x_lay][y_lay]].size(), layers[x_lay].size()))))) / 2;
                 }
@@ -41,7 +33,7 @@ void kernel::model::exec (bool is_training, double motivator)
             // transform F and P in end result --------------------------------->
             for (uint32_t x_in = 0; x_in < layers[x_lay].size(); ++x_in) {
                 for (uint32_t y_in = 0; y_in < layers[linking[x_lay][y_lay]].size(); ++y_in) {
-                    buf_mat.at(x_in, y_in) *= layers[x_lay][x_in]; // x * ((F * P) * (Q / Q,)) -> result
+                    buf_mat.at(x_in, y_in) *= layers[x_lay][x_in]; // x * F * P * (Q / Q,)) -> result
                     buffer_vec[y_in] += buf_mat.at(x_in, y_in);
                 }
             }
