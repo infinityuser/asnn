@@ -24,7 +24,7 @@ void kernel::model::exec (bool is_training, double motivator)
 				trans.at(x_in, y_in) =
 				/*   x   */layers[x_lay][x_in] * 
 				/*   y   */layers[linking[x_lay][y_lay]][y_in] * 
-				/*   S   */weights[x_lay][y_lay].at(x_in, y_in) *
+				/*   S   */(weights[x_lay][y_lay].at(x_in, y_in) ? double(1) : 0.2) *
 				/*   D   */conducts[x_lay][y_lay].at(x_in, y_in) *
 				/*   d   */((1 - layers[linking[x_lay][y_lay]][y_in] / neupeak) / (sumx / layers[x_lay][x_in])) *
 				/*   e   */impulse;
@@ -49,10 +49,7 @@ void kernel::model::exec (bool is_training, double motivator)
 					// if weight will become in small value
 					if (weights[x_lay][y_lay].at(x_in, y_in) < 0 || std::isnan(weights[x_lay][y_lay].at(x_in, y_in)))
 						weights[x_lay][y_lay].at(x_in, y_in) = 0;
-
-					printf("%lf ", weights[x_lay][y_lay].at(x_in, y_in));
 				}
-				puts("");
 			}
 		}
 

@@ -93,10 +93,7 @@ kernel::model::model (std::vector<std::pair<uint32_t, std::vector<uint32_t>>> in
 					for (uint32_t f_n = 0; f_n < layers[linking[it][it_1]].size(); ++f_n) {
 						if (conducts[it][it_1].at(z_n, f_n) < 0) conducts[it][it_1].at(z_n, f_n) = 0;
 						else conducts[it][it_1].at(z_n, f_n) /= double(2) / layers[linking[it][it_1]].size();
-
-						printf("%lf ", conducts[it][it_1].at(z_n, f_n));
 					}
-					puts("");
 				}
 			} else {
 				buf_ui[2] = layers[it].size() - layers[linking[it][it_1]].size();
