@@ -24,7 +24,7 @@ void kernel::model::exec (bool is_training, double motivator)
 				trans.at(x_in, y_in) =
 				/*   x   */layers[x_lay][x_in] * 
 				/*   y   */layers[linking[x_lay][y_lay]][y_in] * 
-				/*   S   */(weights[x_lay][y_lay].at(x_in, y_in) ? double(1) : 0.2) *
+				/*   S   */(weights[x_lay][y_lay].at(x_in, y_in) ? weights[x_lay][y_lay].at(x_in, y_in) : default_v) *
 				/*   D   */conducts[x_lay][y_lay].at(x_in, y_in) *
 				/*   d   */((1 - layers[linking[x_lay][y_lay]][y_in] / neupeak) / (sumx / layers[x_lay][x_in])) *
 				/*   e   */impulse;
