@@ -1,10 +1,11 @@
 // initialization / overload - 0
-kernel::model::model (std::vector<std::pair<uint32_t, std::vector<uint32_t>>> init_arch = {}, double init_default_v = 1, double init_reserve = 1, double maxval = 1, std::string init_name = "new_kernel") 
+kernel::model::model (std::vector<std::pair<uint32_t, std::vector<uint32_t>>> init_arch = {}, double init_default_v = 1, double init_reserve = 1, double maxval = 1, double impulse_k = 1, std::string init_name = "new_kernel") 
 {
 	default_v = init_default_v;
 	name = init_name;
+	impulse = impulse_k;
 	modify = init_reserve;
-	neupick = maxval;
+	neupeak = maxval;
 
 	// init layers and links
 	for (uint32_t it = 0; it < init_arch.size(); ++it) {
@@ -89,8 +90,13 @@ kernel::model::model (std::vector<std::pair<uint32_t, std::vector<uint32_t>>> in
 						else --buf_ui[0];
 					}
 
-					for (uint32_t f_n = 0; f_n < layers[linking[it][it_1]].size(); ++f_n) 
+					for (uint32_t f_n = 0; f_n < layers[linking[it][it_1]].size(); ++f_n) {
 						if (conducts[it][it_1].at(z_n, f_n) < 0) conducts[it][it_1].at(z_n, f_n) = 0;
+						else conducts[it][it_1].at(z_n, f_n) /= double(2) / layers[linking[it][it_1]].size();
+
+						printf("%lf ", conducts[it][it_1].at(z_n, f_n));
+					}
+					puts("");
 				}
 			} else {
 				buf_ui[2] = layers[it].size() - layers[linking[it][it_1]].size();
@@ -158,8 +164,10 @@ kernel::model::model (std::vector<std::pair<uint32_t, std::vector<uint32_t>>> in
 					}
 
 				
-					for (uint32_t f_n = 0; f_n < layers[it].size(); ++f_n) 
+					for (uint32_t f_n = 0; f_n < layers[it].size(); ++f_n) {
 						if (conducts[it][it_1].at(f_n, z_n) < 0) conducts[it][it_1].at(f_n, z_n) = 0;
+						else conducts[it][it_1].at(f_n, z_n) /= double(2) / layers[it].size();
+					}
 				}  
 			} 
 
@@ -182,7 +190,8 @@ void kernel::model::backup(std::string path)
 	log << default_v << " ";
 	log << layers.size() << " ";
 	log << modify << " ";
-	log << neupick << " ";
+	log << neupeak << " ";
+	log << impulse << " ";
 
 	for (uint32_t it = 0; it < layers.size(); ++it) {
 		log << layers[it].size() << " ";
@@ -243,7 +252,8 @@ void kernel::model::open(std::string path)
 	log >> default_v;
 	log >> buf_ui[0];
 	log >> modify;
-	log >> neupick;
+	log >> neupeak;
+	log >> impulse;
 
 	for (uint32_t it = 0; it < buf_ui[0]; ++it) {
 		layers.push_back({});

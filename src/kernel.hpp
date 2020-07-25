@@ -10,7 +10,8 @@ namespace kernel
 
             double default_v = 1; 
             double modify = 1;
-			double neupick = 1; 
+			double impulse = 1;
+			double neupeak = 1; 
 
             std::string name = "";
             std::vector<std::vector<double>> layers;
@@ -18,7 +19,7 @@ namespace kernel
             std::vector<std::vector<arma::Mat<double>>> weights;
             std::vector<std::vector<arma::Mat<double>>> conducts;
 		public:
-            model (std::vector<std::pair<unsigned int, std::vector<unsigned int>>>, double, double, double, std::string);
+            model (std::vector<std::pair<unsigned int, std::vector<unsigned int>>>, double, double, double, double, std::string);
             model (std::string = "");
             
 			void backup (std::string);
