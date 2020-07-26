@@ -21,151 +21,34 @@ kernel::model::model (std::vector<std::pair<uint32_t, std::vector<uint32_t>>> in
 
 			weights[it].push_back(arma::Mat<double>(layers[it].size(), layers[linking[it][it_1]].size()).ones());
 			weights[it][weights[it].size() - 1] /= (layers[it].size() * layers[linking[it][it_1]].size());
+			int neusy;
 
 			conducts[it].push_back(arma::Mat<double>(layers[it].size(), layers[linking[it][it_1]].size()));
 
 			// init of distances
 			if (layers[it].size() <= layers[linking[it][it_1]].size()) {
-				buf_ui[2] = layers[linking[it][it_1]].size() - layers[it].size();
-				
-				buf_ui[1] = buf_ui[2] / 2;                                       // borders
-				buf_ui[2] = (buf_ui[2] % 2 ? buf_ui[2] / 2 + 1 : buf_ui[2] / 2); // borders
+				neusy = layers[linking[it][it_1]].size() * modify / 2;
 
-				for (uint32_t z_n = 0; z_n < layers[it].size(); ++z_n) {
-					buf_ui[6] = buf_ui[1] + z_n; 
-					buf_ui[7] = buf_ui[2] + z_n;
-					buf_ui[5] = 0; // shift
-					buf_ui[0] = 0; // timer
-					buf_ui[3] = 0; // counter of q
-					buf_ui[4] = 0; // counter of q in current, most faceless neuron
-					bool pick = true; // toggle
-
-					for (uint32_t ti = 0; ti < layers[linking[it][it_1]].size(); ++ti) {
-						if (ti == buf_ui[6] or ti == buf_ui[7]) {
-							if (ti == buf_ui[7]) {
-								pick = false;
-								--buf_ui[5];
-							} 
-						} else if (pick) ++buf_ui[5];
-						else --buf_ui[5]; 
+				for (int x = 0; x < layers[it].size(); ++x)
+					for (int y = 0; y < layers[linking[it][it_1]].size(); ++y) {
+						if (y > double(x) / layers[it].size() * layers[linking[it][it_1]].size() - neusy &&
+							y < double(x) / layers[it].size() * layers[linking[it][it_1]].size() + neusy)
+							conducts[it][it_1].at(x, y) = 1;
+						else 	
+							conducts[it][it_1].at(x, y) = 0;
 					}
-
-					++buf_ui[5];
-					if (buf_ui[5] > 0) buf_ui[5] = 0; 
-					pick = true;
-					
-					for (uint32_t ti = 0; ti < layers[linking[it][it_1]].size(); ++ti) {
-						buf_ui[3] += buf_ui[0] - buf_ui[5];
-						
-						if (ti == buf_ui[6] or ti == buf_ui[7]) {
-							if (ti == buf_ui[7]) {
-								pick = false;
-								buf_ui[4] = buf_ui[0] - buf_ui[5];
-								--buf_ui[0];
-							} 
-						} else if (pick) ++buf_ui[0];
-						else --buf_ui[0]; 
-					}
-
-					// a = 2(kl - th) / h(l - th) - get base distance between neurons
-					buf_d[0] = (2 * (modify * buf_ui[3] - double(buf_ui[4] * layers[linking[it][it_1]].size()))) / 
-								(layers[linking[it][it_1]].size() * (double(buf_ui[3]) - double(buf_ui[4] * layers[linking[it][it_1]].size())));
-				
-					// q = (2 - ha) / l - get factor of distances 
-					buf_d[1] = (double(2) - layers[linking[it][it_1]].size() * buf_d[0]) / buf_ui[3];
-
-					if (layers[linking[it][it_1]].size() <= 2 and layers[it].size() == 1) buf_d[0] = 2 / layers[linking[it][it_1]].size();
-
-					buf_ui[0] = 0; // timer
-					pick = true; // switcher
-					for (uint32_t f_n = 0; f_n < layers[linking[it][it_1]].size(); ++f_n) {
-						conducts[it][it_1].at(z_n, f_n) = (buf_d[1] > 0 ? buf_d[0] + buf_d[1] * (buf_ui[0] - buf_ui[5]) : buf_d[0]);
-
-						if (f_n == buf_ui[6] or f_n == buf_ui[7]) {
-							if (f_n == buf_ui[7]) {
-								pick = false;
-								--buf_ui[0];
-							} 
-						} else if (pick) ++buf_ui[0];
-						else --buf_ui[0];
-					}
-
-					for (uint32_t f_n = 0; f_n < layers[linking[it][it_1]].size(); ++f_n) {
-						if (conducts[it][it_1].at(z_n, f_n) < 0) conducts[it][it_1].at(z_n, f_n) = 0;
-						else conducts[it][it_1].at(z_n, f_n) /= double(2) / layers[linking[it][it_1]].size();
-					}
-				}
 			} else {
-				buf_ui[2] = layers[it].size() - layers[linking[it][it_1]].size();
+				neusy = layers[it].size() * modify / 2;
 
-				buf_ui[1] = buf_ui[2] / 2;                                       // borders
-				buf_ui[2] = (buf_ui[2] % 2 ? buf_ui[2] / 2 + 1 : buf_ui[2] / 2); // borders
-
-				for (uint32_t z_n = 0; z_n < layers[linking[it][it_1]].size(); ++z_n) {
-					buf_ui[6] = buf_ui[1] + z_n; // shifted border
-					buf_ui[7] = buf_ui[2] + z_n; // shifted border
-					buf_ui[5] = 0; // shift
-					buf_ui[0] = 0; // timer
-					buf_ui[3] = 0; // counter of q
-					buf_ui[4] = 0; // counter of q in current, most faceless neuron
-					bool pick = true; // toggle
-
-					for (uint32_t ti = 0; ti < layers[it].size(); ++ti) {
-						if (ti == buf_ui[6] or ti == buf_ui[7]) {
-							if (ti == buf_ui[7]) {
-								pick = false;
-								--buf_ui[5];
-							} 
-						} else if (pick) ++buf_ui[5];
-						else --buf_ui[5]; 
+				for (int x = 0; x < layers[linking[it][it_1]].size(); ++x)
+					for (int y = 0; y < layers[it].size(); ++y) {
+						if (y > double(x) / layers[linking[it][it_1]].size() * layers[it].size() - neusy &&
+							y < double(x) / layers[linking[it][it_1]].size() * layers[it].size() + neusy)
+							conducts[it][it_1].at(y, x) = 1;
+						else 	
+							conducts[it][it_1].at(y, x) = 0;
 					}
 
-					++buf_ui[5];
-					if (buf_ui[5] > 0) buf_ui[5] = 0; 
-					pick = true;
-					
-					for (uint32_t ti = 0; ti < layers[it].size(); ++ti) {
-						buf_ui[3] += buf_ui[0] - buf_ui[5];
-						
-						if (ti == buf_ui[6] or ti == buf_ui[7]) {
-							if (ti == buf_ui[7]) {
-								pick = false;
-								buf_ui[4] = buf_ui[0] - buf_ui[5];
-								--buf_ui[0];
-							} 
-						} else if (pick) ++buf_ui[0];
-						else --buf_ui[0]; 
-					}
-
-					// a = 2(kl - th) / h(l - th) - get base distance between neurons
-					buf_d[0] = (2 * (modify * buf_ui[3] - double(buf_ui[4] * layers[it].size()))) / 
-								(layers[it].size() * (buf_ui[3] - double(buf_ui[4] * layers[it].size())));
-				
-					// q = (2 - ha) / l - get factor of distances
-					buf_d[1] = (double(2) - layers[it].size() * buf_d[0]) / buf_ui[3];
-
-					if (layers[linking[it][it_1]].size() == 1 and layers[it].size() <= 2) buf_d[0] = 2 / layers[it].size();
-
-					buf_ui[0] = 0;
-					pick = true;
-					for (uint32_t f_n = 0; f_n < layers[it].size(); ++f_n) {
-						conducts[it][it_1].at(f_n, z_n) = (buf_d[1] > 0 ? buf_d[0] + buf_d[1] * (buf_ui[0] - buf_ui[5]) : buf_d[0]);
-
-						if (f_n == buf_ui[6] or f_n == buf_ui[7]) {
-							if (f_n == buf_ui[7]) {
-								pick = false;
-								--buf_ui[0];
-							} 
-						} else if (pick) ++buf_ui[0];
-						else --buf_ui[0];
-					}
-
-				
-					for (uint32_t f_n = 0; f_n < layers[it].size(); ++f_n) {
-						if (conducts[it][it_1].at(f_n, z_n) < 0) conducts[it][it_1].at(f_n, z_n) = 0;
-						else conducts[it][it_1].at(f_n, z_n) /= double(2) / layers[it].size();
-					}
-				}  
 			} 
 
 		}
