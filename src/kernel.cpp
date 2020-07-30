@@ -19,8 +19,7 @@ kernel::model::model (std::vector<std::pair<uint32_t, std::vector<uint32_t>>> in
 	for (uint32_t it = 0; it < init_arch.size(); ++it) {
 		for (uint32_t it_1 = 0; it_1 < linking[it].size(); ++it_1) {
 
-			weights[it].push_back(arma::Mat<double>(layers[it].size(), layers[linking[it][it_1]].size()).ones());
-			weights[it][weights[it].size() - 1] /= (layers[it].size() * layers[linking[it][it_1]].size());
+			weights[it].push_back(arma::Mat<double>(layers[it].size(), layers[linking[it][it_1]].size()).zeros());
 			int neusy;
 
 			conducts[it].push_back(arma::Mat<double>(layers[it].size(), layers[linking[it][it_1]].size()));
