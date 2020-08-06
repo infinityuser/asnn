@@ -49,7 +49,7 @@ void kernel::model::exec (bool is_training, double motivator)
 					weights[x_lay][y_lay][x_in][y_in] += (target - weights[x_lay][y_lay][x_in][y_in]) * motivator;
 					// ----------------------------------------------
 
-					// if there will be some troubles with in double operations
+					// if there will be some troubles with double operations
 					if (weights[x_lay][y_lay][x_in][y_in] < 0 || isnan(weights[x_lay][y_lay][x_in][y_in]))
 						weights[x_lay][y_lay][x_in][y_in] = 0;
 				}
@@ -63,8 +63,8 @@ void kernel::model::exec (bool is_training, double motivator)
 				layers[linking[x_lay][y_lay]][y_in] += trans[x_in][y_in];
 			}
 
-		// activation function ---------------------------------------------->
-		// ------------------------------------------------------------------>
+		// pseudo activation function ----------------------------------------->
+		// -------------------------------------------------------------------->
 		buf_d[0] = 0;
 		for (int y_in = 0; y_in < layers[linking[x_lay][y_lay]].size(); ++y_in)
 			if (layers[linking[x_lay][y_lay]][y_in] < buf_d[0]) buf_d[0] = layers[linking[x_lay][y_lay]][y_in];
@@ -85,7 +85,7 @@ void kernel::model::exec (bool is_training, double motivator)
 				layers[linking[x_lay][y_lay]][y_in] = defval;
 		}
 
-		// ------------------------------------------------------------------->
+		// -------------------------------------------------------------------->
 		buf_d[0] = 0;
 		for (int x_in = 0; x_in < layers[x_lay].size(); ++x_in)
 			if (layers[x_lay][x_in] < buf_d[0]) buf_d[0] = layers[x_lay][x_in];
