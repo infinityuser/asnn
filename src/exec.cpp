@@ -29,10 +29,10 @@ void kernel::model::exec (bool is_training, double motivator)
 				trans[x_in][y_in] =
 				/*   x   */layers[x_lay][x_in] * 
 				/*   y   */layers[linking[x_lay][y_lay]][y_in] * 
-				/*   S   */(weights[x_lay][y_lay][x_in][y_in] ? weights[x_lay][y_lay][x_in][y_in] : defval) *
-				/*   D   */conducts[x_lay][y_lay][x_in][y_in] *
-				/*   d   */((1 - layers[linking[x_lay][y_lay]][y_in] / neupeak) / (sumx / layers[x_lay][x_in])) *
-				/*   n   */impulse;
+				/*   w   */(weights[x_lay][y_lay][x_in][y_in] ? weights[x_lay][y_lay][x_in][y_in] : defval) *
+				/*   d   */conducts[x_lay][y_lay][x_in][y_in] *
+				/* delta */((1 - layers[linking[x_lay][y_lay]][y_in] / neupeak) / (sumx / layers[x_lay][x_in])) *
+				/*  eta  */impulse;
 
 				sumtransy[y_in] += trans[x_in][y_in];
 				sumtransx[x_in] += trans[x_in][y_in];
@@ -44,7 +44,7 @@ void kernel::model::exec (bool is_training, double motivator)
 			for (int y_in = 0; y_in < layers[linking[x_lay][y_lay]].size(); ++y_in) {
 				for (int x_in = 0; x_in < layers[x_lay].size(); ++x_in) {
 					// ----------------------------------------------
-					// S = S + (t - S) * m
+					// w = w + (tw - w) * m
 					target = (trans[x_in][y_in] / sumtransy[y_in] + trans[x_in][y_in] / sumtransx[x_in]) / 2;
 					weights[x_lay][y_lay][x_in][y_in] += (target - weights[x_lay][y_lay][x_in][y_in]) * motivator;
 					// ----------------------------------------------
