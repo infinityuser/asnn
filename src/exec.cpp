@@ -4,7 +4,7 @@ using namespace std;
 void kernel::model::exec (bool is_training, double motivator)
 {
 	vector<vector<double>> trans;
-	vector<double> sumtransy, sumtransx;
+	vector<double> maxtransy, maxtransx, avetransx, avetransy, mintransy, mintransx;
 	
 	double target;
 	double buf_d[2];
@@ -20,33 +20,51 @@ void kernel::model::exec (bool is_training, double motivator)
 		}
 
 		trans = vector<vector<double>>(layers[x_lay].size(), (vector<double>(layers[linking[x_lay][y_lay]].size(), 0)));
-		sumtransy = vector<double>(layers[linking[x_lay][y_lay]].size(), 0);
-		sumtransx = vector<double>(layers[x_lay].size(), 0);
+		maxtransy = vector<double>(layers[linking[x_lay][y_lay]].size(), -neupeak);
+		maxtransx = vector<double>(layers[x_lay].size(), -neupeak);
+		mintransy = vector<double>(layers[linking[x_lay][y_lay]].size(), neupeak);
+		mintransx = vector<double>(layers[x_lay].size(), neupeak);
+		avetransy = vector<double>(layers[linking[x_lay][y_lay]].size(), 0);
+		avetransx = vector<double>(layers[x_lay].size(), 0);
 
 		// collecting transmitted signal ------------------------------------->
 		for (int x_in = 0; x_in < layers[x_lay].size(); ++x_in) {
 			for (int y_in = 0; y_in < layers[linking[x_lay][y_lay]].size(); ++y_in) {
 				trans[x_in][y_in] =
 				/*   x   */layers[x_lay][x_in] * 
-				/*   y   */layers[linking[x_lay][y_lay]][y_in] * 
+				/*   y   */layers[linking[x_lay][y_lay]][y_in] * //just to check hypothesis
 				/*   w   */(weights[x_lay][y_lay][x_in][y_in] ? weights[x_lay][y_lay][x_in][y_in] : defval) *
 				/*   d   */conducts[x_lay][y_lay][x_in][y_in] *
-				/* delta */((1 - layers[linking[x_lay][y_lay]][y_in] / neupeak) / (sumx / layers[x_lay][x_in])) *
-				/*  eta  */impulse;
+				/* delta *///((1 - layers[linking[x_lay][y_lay]][y_in] / neupeak) / (sumx / layers[x_lay][x_in])) * may no longer be need, relaced with motivator 
+							motivator; 
 
-				sumtransy[y_in] += trans[x_in][y_in];
-				sumtransx[x_in] += trans[x_in][y_in];
+				if (maxtransy[y_in] < trans[x_in][y_in]) maxtransy[y_in] = trans[x_in][y_in];
+				if (maxtransx[x_in] < trans[x_in][y_in]) maxtransx[x_in] = trans[x_in][y_in];
+				if (mintransy[y_in] > trans[x_in][y_in]) mintransy[y_in] = trans[x_in][y_in];
+				if (mintransx[x_in] > trans[x_in][y_in]) mintransx[x_in] = trans[x_in][y_in];
+				
+				avetransx[x_in] += trans[x_in][y_in];
+				avetransy[y_in] += trans[x_in][y_in];
 			}
 		}
 
+		for (int x_in = 0; x_in < layers[x_lay].size(); ++x_in) {
+			avetransx[x_in] = avetransx[x_in] / layers[x_lay].size() - mintransx[x_in];
+			maxtransx[x_in] = maxtransx[x_in] - mintransx[x_in];
+		} for (int y_in = 0; y_in < layers[linking[x_lay][y_lay]].size(); ++y_in) {
+			avetransy[y_in] = avetransy[y_in] / layers[linking[x_lay][y_lay]].size() - mintransy[y_in];
+			maxtransy[y_in] = maxtransy[y_in] - mintransy[y_in];
+		}
+		
 		// changing weights  ------------------------------------------------->
 		if (is_training) {
 			for (int y_in = 0; y_in < layers[linking[x_lay][y_lay]].size(); ++y_in) {
 				for (int x_in = 0; x_in < layers[x_lay].size(); ++x_in) {
 					// ----------------------------------------------
 					// w = w + (tw - w) * m
-					target = (trans[x_in][y_in] / sumtransy[y_in] + trans[x_in][y_in] / sumtransx[x_in]) / 2;
-					weights[x_lay][y_lay][x_in][y_in] += (target - weights[x_lay][y_lay][x_in][y_in]) * motivator;
+					target = ((trans[x_in][y_in] - mintransy[y_in]) / maxtransy[y_in] + 
+								(trans[x_in][y_in] - mintransx[x_in]) / maxtransx[x_in]) / 2;
+					weights[x_lay][y_lay][x_in][y_in] += (target - weights[x_lay][y_lay][x_in][y_in]) * abs(motivator);
 					// ----------------------------------------------
 
 					// if there will be some troubles with double operations
@@ -56,14 +74,15 @@ void kernel::model::exec (bool is_training, double motivator)
 			}
 		}
 
-		// transform values of x layers and y layers -------------------------->
-		for (int x_in = 0; x_in < layers[x_lay].size(); ++x_in) 
-			for (int y_in = 0; y_in < layers[linking[x_lay][y_lay]].size(); ++y_in) {
-				layers[x_lay][x_in] -= trans[x_in][y_in];
-				layers[linking[x_lay][y_lay]][y_in] += trans[x_in][y_in];
-			}
 
 		// pseudo activation function ----------------------------------------->
+		
+		for (int x_in = 0; x_in < layers[x_lay].size(); ++x_in) 
+			layers[x_lay][x_in] *= avetransx[x_in] / maxtransx[x_in];
+			
+		for (int y_in = 0; y_in < layers[linking[x_lay][y_lay]].size(); ++y_in)
+			layers[linking[x_lay][y_lay]][y_in] *= avetransy[y_in] / maxtransy[y_in];
+		
 		// -------------------------------------------------------------------->
 		buf_d[0] = 0;
 		for (int y_in = 0; y_in < layers[linking[x_lay][y_lay]].size(); ++y_in)
